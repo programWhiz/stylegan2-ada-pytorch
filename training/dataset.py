@@ -85,7 +85,9 @@ class Dataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         image = self._load_raw_image(self._raw_idx[idx])
         assert isinstance(image, np.ndarray)
-        assert list(image.shape) == self.image_shape
+        if list(image.shape) != self.image_shape:
+            imname = self._image_fnames[self._raw_idx[idx]]
+            raise Exception(f"Image shape {image.shape} != {self.image_shape} for image: {imname}")
         assert image.dtype == np.uint8
         if self._xflip[idx]:
             assert image.ndim == 3 # CHW
