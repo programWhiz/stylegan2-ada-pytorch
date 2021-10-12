@@ -100,6 +100,13 @@ class StyleGAN2Loss(Loss):
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
                 loss_Dgen = torch.nn.functional.softplus(gen_logits) # -log(1 - sigmoid(gen_logits))
+
+            # Flood loss
+            with torch.no_grad():
+                gen_odds = torch.exp(gen_logits)
+                gen_probs = gen_odds / (1.0 + gen_odds)
+                training_stats.report('Loss/probs/fake', gen_probs)
+
             with torch.autograd.profiler.record_function('Dgen_backward'):
                 loss_Dgen.mean().mul(gain).backward()
 
@@ -117,6 +124,11 @@ class StyleGAN2Loss(Loss):
                 if do_Dmain:
                     loss_Dreal = torch.nn.functional.softplus(-real_logits) # -log(sigmoid(real_logits))
                     training_stats.report('Loss/D/loss', loss_Dgen + loss_Dreal)
+
+                with torch.no_grad():
+                    real_odds = torch.exp(real_logits)
+                    real_probs = real_odds / (1.0 + real_odds)
+                    training_stats.report('Loss/probs/real', real_probs)
 
                 loss_Dr1 = 0
                 if do_Dr1:
